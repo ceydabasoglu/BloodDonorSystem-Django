@@ -1,0 +1,147 @@
+<!-- BloodRequestManagement/templates/request_blood.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Blood</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <style>
+        .blood-type-select {
+            width: calc(100% - 18px);
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #007bff;
+        }
+
+        form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Request Blood</h1>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div>
+            <label for="requester_name">Requester name:</label>
+            <input type="text" name="requester_name" required>
+        </div>
+        
+        <div>
+            <label for="contact_email">Contact email:</label>
+            <input type="email" name="contact_email" required>
+        </div>
+        
+        <div>
+            <label for="hospital">Hospital:</label>
+            <input type="text" name="hospital" required>
+        </div>
+
+        <!-- City and Town selection -->
+        <div>
+            <label for="citySelect">City:</label>
+            <select id="citySelect" name="city" required></select>
+        </div>
+
+        <div>
+            <label for="districtSelect">Town:</label>
+            <select id="districtSelect" name="town" required></select>
+        </div>
+
+        <div>
+            <label for="blood_type">Blood type:</label>
+            {{ form.blood_type }}
+        </div>
+
+        <div>
+            <label for="units">Units:</label>
+            <input type="number" name="units" min="1" required>
+        </div>
+
+        <div>
+            <label for="duration_of_search_days">Duration of search days:</label>
+            <input type="number" name="duration_of_search_days" min="1" required>
+        </div>
+
+        <div>
+            <label for="reason">Reason:</label>
+            <textarea name="reason" required></textarea>
+        </div>
+
+        <button type="submit">Request Blood</button>
+    </form>
+
+    <script>
+        // API URL
+        var apiUrl = "https://turkiyeapi.cyclic.app/api/v1/provinces?";
+
+        // Sayfa yüklendiğinde çalışacak kod bloğu
+        document.addEventListener("DOMContentLoaded", function () {
+            // Şehirleri ve ilçeleri yükle
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    // Şehirleri seçeneklere ekle
+                    var citySelect = document.getElementById("citySelect");
+                    data.data.forEach(city => {
+                        var option = document.createElement("option");
+                        option.value = city.name;
+                        option.text = city.name;
+                        citySelect.appendChild(option);
+                    });
+
+                    // İlk şehir seçeneği seçildiğinde ilçeleri güncelle
+                    citySelect.addEventListener("change", function () {
+                        var selectedCityName = this.value;
+                        var selectedCity = data.data.find(city => city.name == selectedCityName);
+
+                        // İlçeleri seçeneklere ekle
+                        var districtSelect = document.getElementById("districtSelect");
+                        districtSelect.innerHTML = ""; // Önceki ilçeleri temizle
+                        selectedCity.districts.forEach(district => {
+                            var option = document.createElement("option");
+                            option.value = district.name;
+                            option.text = district.name;
+                            districtSelect.appendChild(option);
+                        });
+                    });
+
+                    // İlk şehir seçeneğini seçtikten sonra ilçeleri güncelle
+                    citySelect.dispatchEvent(new Event("change"));
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        });
+    </script>
+</body>
+</html>

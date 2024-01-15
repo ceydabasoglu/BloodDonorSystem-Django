@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <title>Create/Query Donors</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+    </style>
+    <script>
+        // API URL
+        var apiUrl = "https://turkiyeapi.cyclic.app/api/v1/provinces?";
+        document.addEventListener("DOMContentLoaded", function () {
+            // Şehirleri ve ilçeleri yükle
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    // Şehirleri seçeneklere ekle
+                    var citySelect = document.getElementById("citySelect");
+                    data.data.forEach(city => {
+                        var option = document.createElement("option");
+                        option.value = city.name; // Adı al
+                        option.text = city.name;
+                        citySelect.appendChild(option);
+                    });
+        
+                    // İlk şehir seçeneği seçildiğinde ilçeleri güncelle
+                    citySelect.addEventListener("change", function () {
+                        var selectedCityName = this.value; // Şehir adını al
+                        var selectedCity = data.data.find(city => city.name == selectedCityName);
+        
+                        // İlçeleri seçeneklere ekle
+                        var districtSelect = document.getElementById("districtSelect");
+                        districtSelect.innerHTML = ""; // Önceki ilçeleri temizle
+                        selectedCity.districts.forEach(district => {
+                            var option = document.createElement("option");
+                            option.value = district.name; // İlçe adını al
+                            option.text = district.name;
+                            districtSelect.appendChild(option);
+                        });
+                    });
+        
+                    // İlk şehir seçeneğini seçtikten sonra ilçeleri güncelle
+                    citySelect.dispatchEvent(new Event("change"));
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        });
+    </script>
+</head>
+<body>
+    <h1>{{ welcome_message }}</h1>
+    {% if user.is_authenticated %}
+        <p>Welcome, {{ user.username }}!</p>
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <label for="fullname">Fullname:</label>
+            <input type="text" name="fullname" required><br>
+            
+            <label for="blood_type">Blood Type:</label>
+            <select name="blood_type" required>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="0+">0+</option>
+                <option value="0-">0-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+            </select><br>
+            
+            <label for="citySelect">City:</label>
+            <select id="citySelect" name="city" required></select>
+
+            <label for="districtSelect">Town:</label>
+            <select id="districtSelect" name="town" required></select>
+            
+            <label for="phone_number">Phone Number:</label>
+            <input type="text" name="phone_number" required><br>
+            
+            <label for="photo">Photo:</label>
+            <input type="file" name="photo"><br>
+            
+            <button type="submit">Create Donor</button>
+        </form>
+        
+        <!-- Eğer formda hata varsa hata mesajlarını göster -->
+        {% if form.errors %}
+            <div style="color: red;">
+                <strong>Form errors:</strong>
+                <ul>
+                    {% for field, errors in form.errors.items %}
+                        <li>{{ field }}: {{ errors.0 }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <hr>
+
+        <h2>Existing Donors:</h2>
+        <table>
+            <tr>
+                <th>Fullname</th>
+                <th>Blood Type</th>
+                <th>Town</th>
+                <th>City</th>
+                <th>Actions</th>
+            </tr>
+            {% for donor in donors %}
+                <tr>
+                    <td>{{ donor.fullname }}</td>
+                    <td>{{ donor.blood_type }}</td>
+                    <td>{{ donor.town }}</td>
+                    <td>{{ donor.city }}</td>
+                    <td>
+                        <a href="{% url 'edit_donor' donor.id %}">Edit</a> |
+                        <a href="{% url 'delete_donor' donor.id %}">Delete</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>Please <a href="{% url 'login' %}">log in</a> to access this page.</p>
+    {% endif %}
+</body>
+</html>
